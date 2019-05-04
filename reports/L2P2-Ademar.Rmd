@@ -1,0 +1,121 @@
+---
+title: "L2P2 - Ademar"
+output:
+  html_document:
+    df_print: paged
+---
+
+## **Explorando e Inferindo dados das Sessões, Buscas e Navegações da Wikimedia**
+
+
+Neste relatório, usa-se a exploração de dados da Wikimedia Foundation, apresentando conclusões de inferências estatísticas sobre o dataset disponibilizado por eles e seguindo instruções da tarefa original, respondendo as quatro perguntas elencadas na mesma.
+
+## 1. Importando as bibliotecas utilizadas
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(lubridate)
+library(knitr)
+library(ggplot2)
+library(scales)
+
+theme_set(theme_bw())
+
+
+
+```
+
+## 2. Carregando os dados para análise
+
+```{r message=FALSE, warning=FALSE}
+dados = read_csv(here::here("data/search_data.csv"))
+
+glimpse(dados)
+```
+
+Para ajudar na análise, foi adicionada uma nova coluna nos dados, essa coluna refere-se a data realizada na pesquisa, excluindo a informação de horas. Para isso foi utilizada a variável 'session_start_date' do dataset original.
+
+```{r, warning=FALSE, message=FALSE}
+dados <- mutate(dados, date = date(session_start_date))
+```
+
+### 2.1 Tratamento dos dados
+
+Para uma análise melhor, foram realizados alguns tratamento nos dados, retirando registros com comportamentos indesejados.
+
+O primeiro registro retirado foi onde o local do primeiro click é maior que a quantidade de resultados da busca ('first_click' > 'results').
+
+```{r, warning=FALSE, message=FALSE}
+indesejados = dados%>%
+    filter(first_click > results)
+
+indesejados
+```
+
+Outro registro indesejado é onde houveram clicks e não existe registro do primeiro click ('num_clicks' > 0 & is.na('first_click').
+
+```{r}
+indesejados2 = dados%>%
+    filter(num_clicks > 0 & is.na(first_click))
+
+indesejados2
+```
+
+Após a análise desses dados indesejados eles foram retirados do dataset.
+
+```{r}
+dados = dados %>%
+  filter((first_click <= results) | ( num_clicks == 0 & is.na(first_click)))
+```
+
+### 2.2 Variáveis Utilizadas nas análises
+
+As variáveis utilizadas podem serem vistas abaixo:
+
+
+
+```group ``` : Um marcador ("a" ou "b");
+
+```results ``` : Número de ocorrências retornadas para o usuário;
+
+```num_clicks```: Número de ocorrências clicadas pelo usuário;
+
+```first_click```: Posição da ocorrência que o usuário clicou primeiro;
+
+```session_start_date```: Data do início da pesquisa;
+
+```session_length```: Duração da sessão.
+
+## 3. Respostas para as questões elencadas
+
+### 3.1 Qual é a taxa de cliques geral diária? Como isso varia entre os grupos?
+
+Analisou-se, em primeiro lugar, os quartis da variável ```num_clicks ```. Foi verificado que, em média, o grupo A tem maior número de clicks que o grupo B. No entanto, pode ser observado que o grupo A tem mais pesquisa no site que o grupo B, podendo haver um enviesamento dos dados. 
+
+
+```{r}
+with(dados, tapply(num_clicks, group, summary))
+```
+
+
+Para melhorar a análise, na Figura 1 está a distribuição da quantidade de clicks separada por grupos. Assim, Podemos observar que existem mais ocorrências do grupo A. 
+
+```{r}
+dados %>% 
+    ggplot(aes(x = group, y = num_clicks)) + 
+     geom_jitter(alpha = .2, size = 2)  + labs(y= "Número de Clicks", x="Grupos", title="Figura 1 - Número de clicks por grupos")
+```
+
+Outra análise é avaliar o comportamento da variável ```num_clicks``` por dia para cada grupo. 
+
+
+```{r}
+dados %>%
+    group_by(round_date(date , unit="day"), group) %>%  
+    summarise(somatorio = sum(num_clicks)) %>% 
+    head()
+```
+
+Como pode ser visto na análise acima, o número de clicks do grupo A sempre foi superior o número de clicks do grupo B.
+

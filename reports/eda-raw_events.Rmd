@@ -1,6 +1,8 @@
 ---
 title: "EDA do log de eventos"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## O quê
