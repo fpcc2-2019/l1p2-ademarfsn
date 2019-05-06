@@ -29,15 +29,15 @@ theme_set(theme_bw())
 ## 2. Carregando os dados para análise
 
 ```{r message=FALSE, warning=FALSE}
-dados = read_csv(here::here("data/search_data.csv"))
-
-glimpse(dados)
+dados_originais = read_csv(here::here("data/search_data.csv"))
+head(100000)
+glimpse(dados_originais)
 ```
 
 Para ajudar na análise, foi adicionada uma nova coluna nos dados, essa coluna refere-se a data realizada na pesquisa, excluindo a informação de horas. Para isso foi utilizada a variável 'session_start_date' do dataset original.
 
 ```{r, warning=FALSE, message=FALSE}
-dados <- mutate(dados, date = date(session_start_date))
+dados <- mutate(dados_originais, date = date(session_start_date))
 ```
 
 ### 2.1 Tratamento dos dados
@@ -65,7 +65,7 @@ indesejados2
 Após a análise desses dados indesejados eles foram retirados do dataset.
 
 ```{r}
-dados = dados %>%
+dados%>%
   filter((first_click <= results) | ( num_clicks == 0 & is.na(first_click)))
 ```
 
@@ -118,4 +118,123 @@ dados %>%
 ```
 
 Como pode ser visto na análise acima, o número de clicks do grupo A sempre foi superior o número de clicks do grupo B.
+
+### 3.2 Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+
+A variável que armazena a posição do primeiro resultado de busca clicada por sessão é a ```first_click```. Com isso, para essa variável são utilizados somentes valores diferentes de NA e maiores que zero (diferente de zero, já que são valores positivos). 
+
+```{r}
+dados = dados %>%
+    filter(!is.na(first_click)) %>%
+    filter(first_click != 0)
+glimpse(dados)
+```
+
+Feito isso, iremos analisar os quartis da variável ```first_click```.
+
+```{r}
+with(dados, tapply(first_click, group, summary))
+```
+
+Observando os resultados que no grupo B os usuários clicam em resultados mais iniciais (Mean 1.976) relacionado as pesquisas do grupo A (Mean 4.416).
+
+Para obter mais elementos para e melhorar a análise, também iremos analisar a distribuição da  variável (```first_click```).
+
+```{r}
+dados %>%
+    ggplot(aes(x=first_click)) + 
+    geom_bar(bins=10, fill = "white", color = "black") + 
+    scale_x_log10() +
+    labs(y = "Quantidade", x = "Primeiro Click", title = "Figura 2 - Comportamento da variável First_click")
+```
+
+Apesar de ter alguns valores fora da faixa, é possível observar que a maioria dos clicks estão entre os 10 primeiros links.
+
+Agora será mostrado a distribuição dos cliques por dia, pra saber se muda alguma coisa em relação aos clicks geral.
+
+```{r, warning=FALSE, message=FALSE}
+dados %>%
+    arrange(date)%>%
+    ggplot(aes(x = first_click, fill = date)) +
+    geom_histogram(binwidth = 2) +
+    scale_x_continuous(limits=c(0, 30)) +
+    scale_y_continuous(limits=c(0, 1000)) +
+    facet_grid(~ date) +
+    labs(title = "Figura 3 - Distribuição por dia", x = "Primeiro click", y = "Quantidade") + theme_gray()
+```
+
+Visualizando esse histograma, vimos que todos os dias, o usuário clica pela primeira vez, na maioria dos dias, também entre os 10 primeiros links.
+
+### 3.3 Qual a taxa de resultados zero no geral? Como isso varia entre os grupos?
+
+Para responder esse questionamento, deve ser considerado, para a variável ```results```, valores iguais a ```0```. Com isso, na Figura 4 exibe a distribuição de zeros nos resultados por data de ocorrência. Para isso foi criado o ```sessao_por_data``` dos dados originais.
+
+```{r}
+dados_originais <- dados_originais%>%
+    filter(!is.na(results))
+
+glimpse(dados)
+```
+
+
+```{r}
+sessao_por_data = dados_originais %>%
+    group_by(date(session_start_date)) %>%
+    summarize(total_sessoes_por_data = n(), 
+              total_sessoes_com_zero_resultados_por_data = sum(results == 0), 
+              taxa = (total_sessoes_com_zero_resultados_por_data/total_sessoes_por_data) * 100)
+
+
+glimpse(sessao_por_data)
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+sessao_por_data %>%
+    ggplot(aes(y = taxa, x = `date(session_start_date)`)) + 
+    geom_bar(stat = "identity", fill = "white", color = "red") + 
+    labs(x = "Data da ocorrência", y = "Taxa de zero resultados", title = "Figura 4 - Taxa de zeros por data de ocorrência")
+```
+
+No geral, a taxa de ocorrências de zero resultados, que pode ser visualizada na Figura 4, se aproxima de 20% nas datas que contém nos dados. O valor, em média, das sessões diárias, onde os usuários obteram zero resultados são de 18,43%. Segue o cálculo abaixo.
+
+```{r, message=FALSE, warning=FALSE}
+print(mean(sessao_por_data$taxa))
+```
+
+Para responder segunda parte da pergunta, como isso varia entre os grupos, foi criado a ```sessao_por_grupo```. Depois, na Figura 5, foi plotado gráfico para analisar melhor os dados.  
+
+```{r}
+sessao_por_grupo <- dados_originais %>%
+    group_by(group, results) %>%
+    summarise(total_sessao_por_grupo = n()) %>%
+    mutate(sessao_por_grupo = total_sessao_por_grupo / sum(total_sessao_por_grupo) * 100)
+                  
+
+glimpse(sessao_por_grupo)
+```
+
+```{r}
+sessao_por_grupo %>%
+    filter(results==0) %>%
+    ggplot(aes(x = group, y = sessao_por_grupo)) +
+    geom_col(width = .4,  fill = "darkcyan") + 
+    labs(title="Figura 5 - Distribuição dos resultados das buscas com valor zero",
+       x="Grupos",  y ="Taxa de resultados zero")
+    
+```
+
+Visualizando a Figura 5, observa-se que a  variação entre os grupos é estatisticamente não significativa, os grupos A e B têm praticamente a mesma quantidade de buscas onde o resultado é zero.
+
+
+
+
+
+
+```
 
