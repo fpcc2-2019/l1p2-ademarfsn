@@ -1,3 +1,8 @@
+
+## Relatório L2P2
+Disponível em http://rpubs.com/ademarneto/493816
+ 
+
 # Sessões, buscas e navegação na wikimedia
 
 Este repo é a semente para uma análise de padrões de busca e navegação em páginas de projetos da wikimedia (provavelmente wikipedia).

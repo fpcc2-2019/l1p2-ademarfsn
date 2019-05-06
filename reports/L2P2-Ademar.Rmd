@@ -1,5 +1,7 @@
 ---
-title: "L2P2 - Ademar"
+title: "Fundamentos de Pesquisa em Ciência da Computação 2 "
+subtitle: "L2P2 - Ademar Neto"
+data: "07 de maio de 2019"
 output:
   html_document:
     df_print: paged
@@ -9,6 +11,9 @@ output:
 
 
 Neste relatório, usa-se a exploração de dados da Wikimedia Foundation, apresentando conclusões de inferências estatísticas sobre o dataset disponibilizado por eles e seguindo instruções da tarefa original, respondendo as quatro perguntas elencadas na mesma.
+
+Nas seções um e dois estão as bibliotecas utilizadas e o os dados utilizados na análise. Na seção 3 estão as respostas para as perguntas elencadas no relatório e na última seção estão as conclusões obtidas das análises sobre os dados.
+
 
 ## 1. Importando as bibliotecas utilizadas
 
@@ -188,10 +193,6 @@ sessao_por_data = dados_originais %>%
 glimpse(sessao_por_data)
 ```
 
-```{r}
-
-```
-
 
 
 ```{r}
@@ -231,7 +232,33 @@ sessao_por_grupo %>%
 
 Visualizando a Figura 5, observa-se que a  variação entre os grupos é estatisticamente não significativa, os grupos A e B têm praticamente a mesma quantidade de buscas onde o resultado é zero.
 
+### 3.4 A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
 
+Foram relacionadas as variáveis duração da sessão e o índice do primeiro click, pra saber se quando o usuário clica nos primeiros links ele dura mais tempo ou não, na sessão.
+
+
+
+```{r, warning=FALSE, message=FALSE}
+dados %>%
+    filter(first_click <= 50)  %>%
+    ggplot(aes(y = first_click, x = session_length)) +
+    geom_point(alpha = .2, size = 2) +
+    ggtitle("Figura 6 - Índice do click em relação a Duração da seção") +
+    scale_y_continuous(limits=c(0, 50)) +
+    scale_x_continuous(limits=c(0,1000)) +
+    labs(y = "Índice do click",x = "Duração da seção (seg)") 
+```
+
+Como pode ser visto na Figura 6, as pessoas, no geral, que clicam nos primeiros links costumam a passar mais tempo nas sessões. Isso foi feito com usuários que clicou entre os 50 primeiros links retornados.
+
+
+## 4. Conclusões
+
+Sabe-se que a média geral de clicks é maior para o grupo A. Assim, como o número de ocorrências é maior para esse grupo (Figura 1), foi verificado também por dia o comportamento da variável ```num_clicks```. Visto isso, concluímos que os clicks no grupo A realmente são maiores que o grupo B.
+
+Em relação em qual link o usuário clica primeiro, verificamos (Figura 2 e Figura 3) que os mesmos clicam pela primeira vez, na maioria das vezes, entre os primeiros 10 links retornados. Contudo, temos uma taxa de 18% de retorno de buscas com resultado zero, no geral (Figura 4). Em relação aos grupos, praticamente, o A e o B têm a mesma quantidade de buscas que retornam zero links (Figura 5).
+
+Por fim, relacionamos a variável duração da sessão e o índice do primeiro click e observamos que, quando o usuário clica primeiro nos índices iniciais, ele tende a ficar mais tempo na sessão (Figura 6).
 
 
 
